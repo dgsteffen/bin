@@ -1,0 +1,206 @@
+#!/usr/bin/python
+
+#
+# Unit test parser and roll-up utility.
+#
+# Usage:
+#
+#  utparse <file or dir>
+#
+# Parses the specified unit test output file, or searches the directory for all such files; produces
+# a summary of all files found, and overall unit test statistics.
+#
+
+import sys, os, re
+
+class testcase :
+    ''' A specific test case within a test suite, with some number of assertions that have passed
+    and failed; some number of expected failures; and, possibly, some unexpected successes'''
+    def __init__(self, suite = None,name=None, result=None) :
+        self.name=suite+' : ' + name
+        self.p = 0              # passes
+        self.f = 0              # failures
+        self.e = 0              # expected failures
+        self.u = 0              # unexpected successes
+
+        self.result='pass'
+        if result=='passed' : pass
+        if result=='failed' : self.result='FAIL'     # Make the output more noticeable
+        if result=='aborted': self.result='ABORTED'  #   (ditto)
+
+    def add_result(self, restype, c) :
+        count = int(c)
+        if restype=='passed' : self.p += count; return
+        if restype=='failed' : self.f += count; return
+        if restype=='expected' : 
+            self.e += count; 
+            ## subtract expected failures from actual failures; this is a little wonky, but then
+            ## expected failures are wonky to begin with.
+            self.f = self.f - count;
+            if self.f < 0 :
+                self.u -= self.f; ## add extras to unexpected successes (very wonky!)
+                self.f = 0
+                return
+        if restype=='unexpected' : self.u += count; return
+
+    def __str__(self) :
+        return "%s %s : %sp %sf %se %su" % ( self.name, self.result, self.p, f, self.e, self.u)
+
+def testsorter (t) :
+    ''' Sorter for test cases '''
+    return t.name
+
+def percent (a,b) :
+    ''' Used in statistics output below '''
+    if b == 0 :
+        return 0
+    return int (100 * (float(a)/float(b)))
+
+def parsefile (filename) :
+
+    f = open(filename)
+
+    cases=[]
+    suitename=""
+    case=None
+    for line in f :
+    
+        ## First we search for the test suite name, in the format it has in the results summary
+        ## secion of the unit test output.
+        snr=re.compile(r'Test suite "(?P<name>.*)"')
+        sn = snr.match(line)
+        if sn != None:
+            suitename=sn.group('name')[:-3] # strip the .ut
+
+        ## Now we look for the start of each test case summary
+        casestart=re.compile(r'  Test case "(?P<name>\w+)" (?P<res>\w+) with:')
+        cs=casestart.match(line)
+        if cs != None :
+            ## we are starting a new case, put the old one in the list (if there is one)
+            if case :
+                cases.append(case)
+            case=testcase(suitename, cs.group('name'), cs.group('res'))
+        
+        ### Now we search for the different kind of testcase results:
+
+        ## This handles pass or fail
+        r = re.compile(r'(?P<count>\d+) assertion(?:s?) out of (?P<total>\d+) (?P<result>\w+)').search(line)
+        if r != None :
+
+            if case :
+                res=r.group('result')
+                ct =r.group('count')
+                case.add_result(res, ct)
+
+        ## This handles expected failure count
+        r = re.compile(r'(?P<count>\d+) failure(?:s?) expected').search(line)
+        if r and case:
+            case.add_result('expected', r.group('count'))
+                
+    if case :
+        cases.append(case)
+    else :
+        print filename, ": no tests found!"
+
+    return cases
+
+
+def dofile(f) :
+    if f[-8:]=='.testlog' :
+        return parsefile(f)
+    return None
+
+##################################################################################################
+##
+##  Start execution.
+##
+##  If it's a file, just do that; otherwise, assume it's a directory and search it and all subdirs
+##  for test output.
+
+filename=sys.argv[1]
+cases=[]
+
+if os.path.isfile(filename) :
+    cases = dofile(filename)
+else:
+    for (p, dirs, files) in os.walk(filename):
+        for f in files :
+            newcases = dofile(p+'/'+f)
+            if newcases :
+                cases = cases +  newcases
+        
+## Now, look through the results for statistics and info for formatting the output
+
+test_total = 0
+test_pass  = 0
+test_fail  = 0
+test_abort = 0
+
+assert_total = 0
+assert_pass  = 0
+assert_fail  = 0
+assert_exp   = 0
+assert_un    = 0
+
+namelen = 0
+reslen  = 0
+passlen = 0
+faillen = 0
+explen  = 0
+unexlen = 0
+
+for c in cases :
+    namelen = max( namelen, len(c.name))
+    reslen  = max( reslen , len(c.result))
+    passlen = max( passlen, len(str(c.p)))
+    faillen = max( faillen, len(str(c.f)))
+    explen  = max( explen , len(str(c.e)))
+    unexlen = max( unexlen, len(str(c.u)))
+
+    test_total += 1
+    if c.result=='FAIL'    : test_fail += 1
+    if c.result=='pass'    : test_pass += 1
+    if c.result=='ABORTED' : test_abort += 1
+
+    assert_total += c.p + c.f + c.e + c.u
+    assert_pass  += c.p
+    assert_fail  += c.f
+    assert_exp   += c.e
+    assert_un    += c.u
+
+
+format_line =   \
+    '%-' + str(namelen) + 's  '  + \
+    '%'  + str(reslen ) + 's ( ' + \
+    '%'  + str(passlen) + 'dp '  + \
+    '%'  + str(faillen) + 'df '  + \
+    '%'  + str(explen)  + 'de '  + \
+    '%'  + str(unexlen) + 'du )'
+
+### Sort them alphabetically
+cases.sort(key=testsorter)
+
+for c in cases:
+    res = c.result
+    if res=='aborted' : res = 'ABORTED'
+    if res=='failed'  : res = 'FAILED'
+    print format_line % (c.name, res, c.p, c.f, c.e, c.u)
+
+print "\n\nTest Statistics:\n"
+
+print "%20d %4d%%  Tests Passed"  % (test_pass,  percent(test_pass ,test_total))
+print "%20d %4d%%  Tests Failed"  % (test_fail,  percent(test_fail ,test_total))
+print "%20d %4d%%  Tests Aborted" % (test_abort, percent(test_abort,test_total))
+print "%20s  %4s  -------------"  % ('----------', '----')
+print "%20d %4d%%  Total Tests  " % (test_total, 100)
+
+
+
+print "\n\nAssertion Statistics:\n"
+
+print "%20d %4d%%  Passed"           % (assert_pass,  percent(assert_pass ,assert_total))
+print "%20d %4d%%  Failed"           % (assert_fail,  percent(assert_fail ,assert_total))
+print "%20d %4d%%  Expected Failure" % (assert_exp,   percent(assert_exp  ,assert_total))
+print "%20d %4d%%  Unexpected Pass"  % (assert_un,    percent(assert_un   ,assert_total))
+print "%20s  %4s  -------------"  % ('----------', '----')
+print "%20d %4d%%  Total Assertions" % (assert_total, 100)

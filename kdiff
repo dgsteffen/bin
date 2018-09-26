@@ -1,0 +1,37 @@
+#!/bin/bash
+
+function dokdiff () { diff -q $1 $2; if [[ $? != 0 ]] ; then  kdiff3 $file1 $file2 > /dev/null 2>&1;
+	else echo "Files are identical"; fi ; }
+
+file1=$1
+file2=$2
+if [[ $1 == '-n' ]]; then
+    file1=$3
+    file2=$4
+    strip=$2
+fi
+
+if [[ ! -e $file1 ]]; then
+    echo "File $file1 does not exist";
+    exit 1;
+fi;
+
+if [[ ! -e $file2 ]]; then
+    echo "File $file2 does not exist";
+    exit 1;
+fi;
+
+### strip if requested
+
+if [[ $strip ]]; then
+    echo "Diffing only top $strip lines..."
+    head -n $strip $file1 > $file1.kdiff_tmp
+    head -n $strip $file2 > $file2.kdiff_tmp
+#    kdiff3 $file1.kdiff_tmp $file2.kdiff_tmp > /dev/null 2>&1;
+    dokdiff  $file1.kdiff_tmp  $file2.kdiff_tmp 
+
+else
+#    kdiff3 $file1 $file2 > /dev/null 2>&1;
+    dokdiff $file1  $file2  
+fi
+

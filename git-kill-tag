@@ -1,0 +1,33 @@
+#!/usr/bin/python
+
+import os
+import sys
+import commands
+
+# Removes the indicated tag from the local repository, and attempts to remove it from the remote repository as well.
+
+if len(sys.argv) < 2 :
+    print "Usage: git-kill-tag <tag-to-kill>"
+    sys.exit(1)
+
+tag = sys.argv[1]
+
+import subprocess
+
+rm_local = subprocess.Popen(["git tag -d " + tag], stdout=subprocess.PIPE, shell=True)
+(out, err) = rm_local.communicate()
+success_str = "Deleted tag '" + tag + "' (was "
+if out.find(success_str) == -1 :
+    print "Error deleting local tag:", out, err
+else:
+    print "Local tag deleted"
+
+
+rm_remote = subprocess.Popen(["git push origin :" + tag], stdout=subprocess.PIPE, shell=True)
+(out, err) = rm_remote.communicate()
+
+if out == '' :
+    print "Remote tag deleted"
+else :
+    print "Error removing remote tag:", out, err
+

@@ -1,0 +1,25 @@
+#!/usr/bin/env python
+
+import os
+import sys
+import commands
+import re
+
+
+args = ";".join(sys.argv[1:])
+
+status_output = commands.getoutput("git status " + args)
+
+lines = status_output.split("\n")
+
+output = True;
+changes_pattern = "\# Untracked files"
+
+for x in lines[:]:
+    if re.match(changes_pattern,x) :
+        output = False;
+    if (output) :
+        print x
+
+
+

@@ -1,0 +1,23 @@
+#!/bin/bash
+
+
+C="$@"
+
+
+
+FILE=${C// /\\ }
+
+echo $FILE
+
+# ONE=${FILE// /\\ }
+# echo "GOT " \"$ONE\"
+
+cygpath -u "${FILE}"
+
+#F2="$(cygpath -u "${FILE}")"
+
+#echo "${F2}"
+
+#/cygdrive/c/emacs/emacs-24.3/bin/emacs.exe "$(cygpath -u "${FILE}")"
+
+
