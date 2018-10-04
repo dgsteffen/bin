@@ -6,7 +6,11 @@ import sys
 real_args = ['emacs']
 for x in sys.argv[1:] :
     if x.find(':') == -1 :
-        real_args.append(x)
+        if (x[-1] == '.') :
+            real_args.append(x + "h")
+            real_args.append(x + "cpp")
+        else :
+            real_args.append(x)
     else :
         bits = x.split(':',1)
         line_arg = bits[1]
