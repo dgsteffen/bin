@@ -22,4 +22,4 @@ for x in sys.argv[1:] :
 
 #print real_args
 
-os.execvp('/usr/bin/emacs', real_args)
+os.execvp('emacs', real_args)
