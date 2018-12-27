@@ -1,0 +1,45 @@
+#!/usr/bin/perl 
+#
+#
+#			       GNUDAT!
+#
+# This perl script takes a .gd file, and turns it into something that
+# gnuplot can handle.
+#
+# ----------------------------------------------------------------------
+#
+# gnudat file format:
+# # begins a comment - completely ignored
+# #> begins a gnuplot command - the space is needed
+#
+# EG: 
+#> set data style lines
+#> set title "Scaling behavior for periodic BC's"
+#> set xlabel "Omega"
+#> set ylabel "Sigma xx"
+#> plot DATA using 1:2 title "5x5", \
+#> '' using 1:3 title "10x10", \
+#> '' using 1:4 title "15x15", \
+#> '' using 1:5 title "20x20"
+
+
+$file = $ARGV[0];
+
+if ( $file !~ /\.gd$/) {$file = $file . ".gd";}
+
+open DATA,$file or die "Can't open gnudat file $file\n";
+
+open GNU, ">.gnudat" or die "Can't open command file\n";
+
+while ($line = <DATA>){
+    if ($line=~ m/^#> (.+)$/ ) {
+	$line = $1;
+	$line=~s/DATA/\'$file\'/g;
+	print GNU "$line\n";
+    }
+}
+
+print GNU "\npause -1 'Hit any key'";
+close GNU;
+
+`gnuplot .gnudat`;

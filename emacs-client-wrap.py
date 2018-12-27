@@ -3,7 +3,7 @@
 import os
 import sys
 
-real_args = ['emacs' ]
+real_args = ['emacsclient', '-c'  ]
 for x in sys.argv[1:] :
     colon_pos = x.find(':')
     if colon_pos == -1 :      # no colons
@@ -24,4 +24,4 @@ for x in sys.argv[1:] :
 
 print real_args
 
-os.execvp('emacs', real_args)
+os.execvp('emacsclient', real_args)
