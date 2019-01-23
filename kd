@@ -1,0 +1,23 @@
+#!/usr/bin/bash
+
+if [[ ! -f $1 ]]; then
+    echo "File $1 does not exist";
+    exit 1;
+fi
+
+if [[ ! -f $2 ]]; then
+    echo "File $2 does not exist";
+    exit 1;
+fi
+
+diff -q "${1}" "${2}" > /dev/null 2>&1
+
+if [[ ${?} == 0 ]]; then
+    echo "Files $1 and $2 are identical";
+    exit 0
+fi
+
+kdiff3 "${1}" "${2}"
+
+
+
