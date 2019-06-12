@@ -1,0 +1,22 @@
+#!/usr/bin/bash
+
+#
+# Run cmake tests from wherever you are
+
+
+while [[ ! -d build  ]]; do 
+    echo
+    echo "No build found in ${PWD}, going up"
+    echo
+    cd ..; 
+done
+
+JOBS=$(nproc --all)
+
+echo 
+echo "USING ${JOBS} threads"
+echo
+
+cd build
+ctest -j "${JOBS}"
+
