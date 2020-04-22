@@ -20,14 +20,14 @@ for s in sys.argv[1:]:
   # first, does it exist? If not, bail
 
   if not os.path.exists(s) :
-    print s, " : not found"
+    print(s, " : not found")
     continue
 
   # remove trailing slashes
   s = s.rstrip('/')
   pathname = os.path.dirname(s)
   if (pathname == trash_path) : #  This doesn't work right... revisit
-    print s + " already trashed "
+    print(s + " already trashed ")
     exit
     
   basename = os.path.basename(s)
@@ -36,7 +36,7 @@ for s in sys.argv[1:]:
   if os.path.exists(newname) :
     move_old(newname)
     
-  print s + commands.getoutput("mv " + s + " " + newname)
+  print (s + commands.getoutput("mv \"" + s + "\" \"" + newname + "\""))
 
 	
 
