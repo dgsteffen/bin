@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import os
 import sys
@@ -22,6 +22,6 @@ for x in sys.argv[1:] :
             real_args.append('+' + line_arg)
         real_args.append(filename)
 
-print real_args
+print(real_args)
 
 os.execvp('emacs', real_args)
