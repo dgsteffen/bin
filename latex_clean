@@ -1,0 +1,12 @@
+#!/usr/bin/env python
+#
+#  This is my first real python program, and I'm very proud of it. :-P
+#
+
+import os
+
+rm_suffixes = ( "aux", "dvi", "log",  "idx", "bbl", "blg", "loa", "lof", "toc", "lot")
+
+for s in rm_suffixes[:]:
+    os.system("drm *." + s)
+  
